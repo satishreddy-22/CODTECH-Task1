@@ -1,0 +1,61 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestClassifier
+
+# Sample DataFrame
+data = {
+    'age': [25, 30, 35, None, 40],
+    'income': [50000, 60000, None, 70000, 80000],
+    'gender': ['male', 'female', 'female', 'male', 'female'],
+    'education': ['bachelor', 'master', 'phd', 'bachelor', 'master'],
+    'target': [1, 0, 1, 0, 1]
+}
+
+df = pd.DataFrame(data)
+
+# Features and target
+X = df.drop('target', axis=1)
+y = df['target']
+
+# Column transformers for different types of preprocessing
+numeric_features = ['age', 'income']
+categorical_features = ['gender', 'education']
+
+# Numeric pipeline
+numeric_pipeline = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='mean')),  # Handle missing values with mean imputation
+    ('scaler', StandardScaler())  # Standardize numerical features
+])
+
+# Categorical pipeline
+categorical_pipeline = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='most_frequent')),  # Handle missing values with most frequent value
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))  # Encode categorical features
+])
+
+# Column transformer that combines both pipelines
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_pipeline, numeric_features),
+        ('cat', categorical_pipeline, categorical_features)
+    ])
+
+# Create a preprocessing and modeling pipeline
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', RandomForestClassifier())  # Example model
+])
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the model
+pipeline.fit(X_train, y_train)
+
+# Evaluate the model
+score = pipeline.score(X_test, y_test)
+print(f'Model accuracy: {score:.2f}')
